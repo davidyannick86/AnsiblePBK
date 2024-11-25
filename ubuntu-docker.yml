@@ -86,10 +86,3 @@
         name: docker
         state: started
         enabled: true
-
-  handlers:
-    - name: restart docker
-      ansible.builtin.service:
-        name: docker
-        state: restarted
-   
