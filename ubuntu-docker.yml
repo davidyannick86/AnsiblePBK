@@ -3,6 +3,8 @@
   hosts: ubuntu
   remote_user: david
   become: true
+  vars:
+    docker_ubuntu_version: "jammy"  # Force using Ubuntu 22.04 LTS repository
 
   tasks:
     - name: Remove old Docker packages
@@ -33,18 +35,31 @@
         state: present
         update_cache: yes
 
-    - name: Add Docker GPG apt key
-      ansible.builtin.apt_key:
+    - name: Create keyrings directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download Docker GPG key
+      ansible.builtin.get_url:
         url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
+
+    - name: Dearmor GPG key
+      ansible.builtin.shell: |
+        gpg --dearmor -o /etc/apt/keyrings/docker.gpg < /etc/apt/keyrings/docker.asc
+        chmod a+r /etc/apt/keyrings/docker.gpg
 
     - name: Add Docker repository
       ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ docker_ubuntu_version }} stable"
         state: present
+        filename: docker
         update_cache: yes
 
-    - name: Install Docker packages
+    - name: Update apt and install Docker packages
       ansible.builtin.apt:
         name:
           - docker-ce
@@ -71,6 +86,15 @@
         name: docker
         state: started
         enabled: yes
+
+    - name: Verify Docker installation
+      ansible.builtin.command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Display Docker version
+      ansible.builtin.debug:
+        var: docker_version.stdout
 
   handlers:
     - name: restart docker
