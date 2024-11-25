@@ -3,8 +3,6 @@
   hosts: ubuntu
   remote_user: david
   become: true
-  vars:
-    docker_ubuntu_version: "jammy"  # Force using Ubuntu 22.04 LTS repository
 
   tasks:
     - name: Remove old Docker packages
@@ -17,58 +15,30 @@
           - runc
         state: absent
 
-    - name: Update and upgrade all packages
+    - name: Update apt cache
       ansible.builtin.apt:
-        update_cache: true
-        upgrade: dist
+        update_cache: yes
         cache_valid_time: 3600
 
-    - name: Install required packages
+    - name: Install prerequisites
       ansible.builtin.apt:
         name:
-          - apt-transport-https
           - ca-certificates
           - curl
           - gnupg
-          - lsb-release
-          - software-properties-common
         state: present
         update_cache: yes
 
-    - name: Create keyrings directory
-      ansible.builtin.file:
-        path: /etc/apt/keyrings
-        state: directory
+    - name: Download Docker install script
+      ansible.builtin.get_url:
+        url: https://get.docker.com
+        dest: /tmp/get-docker.sh
         mode: '0755'
 
-    - name: Download Docker GPG key
-      ansible.builtin.get_url:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        dest: /etc/apt/keyrings/docker.asc
-        mode: '0644'
-
-    - name: Dearmor GPG key
-      ansible.builtin.shell: |
-        gpg --dearmor -o /etc/apt/keyrings/docker.gpg < /etc/apt/keyrings/docker.asc
-        chmod a+r /etc/apt/keyrings/docker.gpg
-
-    - name: Add Docker repository
-      ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ docker_ubuntu_version }} stable"
-        state: present
-        filename: docker
-        update_cache: yes
-
-    - name: Update apt and install Docker packages
-      ansible.builtin.apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
-          - docker-compose-plugin
-        state: present
-        update_cache: yes
+    - name: Execute Docker install script
+      ansible.builtin.command: sh /tmp/get-docker.sh
+      register: docker_installation
+      changed_when: docker_installation.rc == 0
 
     - name: Create docker group
       ansible.builtin.group:
@@ -86,6 +56,11 @@
         name: docker
         state: started
         enabled: yes
+
+    - name: Clean up install script
+      ansible.builtin.file:
+        path: /tmp/get-docker.sh
+        state: absent
 
     - name: Verify Docker installation
       ansible.builtin.command: docker --version
