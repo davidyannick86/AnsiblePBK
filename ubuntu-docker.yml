@@ -1,10 +1,10 @@
 ---
 -  name: Install Docker on Ubuntu 24.10
    hosts: ubuntu
-  remote_user: david
-  become: true
+   remote_user: david
+   become: true
 
-  tasks:
+   tasks:
     - name: Ensure old Docker packages are absent
       ansible.builtin.apt:
         name:
@@ -87,8 +87,8 @@
         state: started
         enabled: true
 
-  handlers:
+   handlers:
     - name: restart docker
       ansible.builtin.service:
         name: docker
-        state: restarted
+        state: restarted  
