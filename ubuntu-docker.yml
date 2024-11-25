@@ -52,7 +52,7 @@
     - name: Install Docker and related packages
       ansible.builtin.apt:
         name: "{{ item }}"
-        state: present
+        state: latest
         update_cache: true
       loop:
         - docker-ce
