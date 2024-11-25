@@ -1,11 +1,11 @@
 ---
-- name: Install Docker on Ubuntu
+-  name: Install Docker on Ubuntu 24.10
   hosts: ubuntu
   remote_user: david
   become: true
 
   tasks:
-    - name: Remove old Docker packages
+    - name: Ensure old Docker packages are absent
       ansible.builtin.apt:
         name:
           - docker
@@ -30,7 +30,6 @@
           - gnupg
           - lsb-release
         state: present
-        update_cache: yes
 
     - name: Create keyrings directory
       ansible.builtin.file:
@@ -47,13 +46,19 @@
 
     - name: Set up Docker repository
       ansible.builtin.shell: |
-        echo \
-        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-        $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
     - name: Update apt cache
       ansible.builtin.apt:
         update_cache: yes
+
+    - name: Check if docker-ce is available
+      ansible.builtin.command: apt-cache policy docker-ce
+      register: docker_policy
+
+    - name: Debug - Show available Docker packages
+      ansible.builtin.debug:
+        var: docker_policy.stdout
 
     - name: Install Docker packages
       ansible.builtin.apt:
@@ -64,7 +69,6 @@
           - docker-buildx-plugin
           - docker-compose-plugin
         state: present
-        update_cache: yes
 
     - name: Add Docker group
       ansible.builtin.group:
