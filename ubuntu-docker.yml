@@ -44,9 +44,9 @@
       args:
         creates: /etc/apt/keyrings/docker.gpg
 
-    - name: Set up Docker repository for focal (LTS)
+    - name: Set up Docker repository for jammy (LTS)
       ansible.builtin.shell: |
-        echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu focal stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu jammy stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
     - name: Update apt cache
       ansible.builtin.apt:
@@ -87,8 +87,9 @@
         state: started
         enabled: true
 
-   handlers:
+  handlers:
     - name: restart docker
       ansible.builtin.service:
         name: docker
-        state: restarted  
+        state: restarted
+   
