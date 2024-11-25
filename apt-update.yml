@@ -1,0 +1,10 @@
+---
+    - name: update packages
+      hosts: debian
+      become: true
+    
+      tasks:
+        - name: APT package updater
+          ansible.builtin.apt:
+                upgrade: yes
+                update_cache: yes
