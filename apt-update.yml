@@ -1,6 +1,6 @@
 ---
     - name: update packages
-      hosts: debian
+      hosts: ubuntu
       become: true
     
       tasks:
